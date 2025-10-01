@@ -18,7 +18,7 @@ def load_data():
 @st.cache_data
 def load_addresses():
     addresses = pd.read_csv("addresses.csv")
-    addresses = addresses.rename(columns=lambda x: x.strip().rstrip(":"))
+    addresses = addresses.rename(columns=lambda x: x.strip())
     return addresses
 
 df = load_data()
@@ -118,11 +118,11 @@ st.download_button(
 )
 
 # --- Outlook integration ---
-recipient_row = addresses[addresses["Issuer"] == issuer]
+recipient_row = addresses[addresses["Institution"] == issuer]
 recipient_email = recipient_row["Email"].iloc[0] if not recipient_row.empty else ""
 
 if recipient_email:
-    subject = "Proxy Vote Request"
+    subject = f"Proxy Vote Request - {issuer}"
     mailto_link = f"mailto:{recipient_email}?subject={subject}&body={email_body.replace(chr(10), '%0A')}"
     st.markdown(f"[📧 Send Email in Outlook]({mailto_link})", unsafe_allow_html=True)
 else:
