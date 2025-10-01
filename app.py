@@ -17,6 +17,16 @@ df = load_data()
 issuer = st.selectbox("Select Issuer", sorted(df["Issuer"].unique()))
 record = df[df["Issuer"] == issuer].iloc[0]
 
+# --- Format dates ---
+def fmt_date(val):
+    try:
+        return pd.to_datetime(val).strftime("%B %d, %Y")
+    except Exception:
+        return val  # fallback if it's not a date
+
+record_date = fmt_date(record["Record Date"])
+meeting_date = fmt_date(record["Meeting Date"])
+
 # --- Build the email ---
 email_body = f"""
 Good afternoon,
@@ -28,8 +38,8 @@ Sodali is working on the proxy below:
 Invesco recommends you vote in Favor of the proposal.
 
 Fund Name: {record['Fund Name']}
-Record Date: {record['Record Date']}
-Meeting Date: {record['Meeting Date']}
+Record Date: {record_date}
+Meeting Date: {meeting_date}
 Cusip: {record['CUSIP']}
 Broadridge Job Number: {record['Broadridge Job Number']}
 Issuer: {record['Issuer']}
