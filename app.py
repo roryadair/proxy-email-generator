@@ -1,14 +1,15 @@
 import streamlit as st
 import pandas as pd
-import os
 
 st.title("Proxy Email Generator")
 
 # --- Load data from CSV ---
 @st.cache_data
 def load_data():
-    # Assumes you uploaded/exported your query as data.csv in the repo
-    return pd.read_csv("data.csv")
+    df = pd.read_csv("data.csv")
+    # Clean up headers by removing trailing colons
+    df = df.rename(columns=lambda x: x.strip().rstrip(":"))
+    return df
 
 df = load_data()
 
