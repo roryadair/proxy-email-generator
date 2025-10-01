@@ -14,14 +14,11 @@ def load_data():
     df = df.rename(columns=lambda x: x.strip().rstrip(":"))
     return df
 
-# --- Load addresses from Excel workbook ---
+# --- Load addresses from CSV (exported from 'Addresses of Bandb' tab) ---
 @st.cache_data
 def load_addresses():
-    addresses = pd.read_excel(
-        "Bank Broker BackOffice Outreach QQQ 09 30 25.xlsx",
-        sheet_name="Addresses of Bandb"
-    )
-    addresses = addresses.rename(columns=lambda x: x.strip())
+    addresses = pd.read_csv("addresses.csv")
+    addresses = addresses.rename(columns=lambda x: x.strip().rstrip(":"))
     return addresses
 
 df = load_data()
@@ -129,7 +126,7 @@ if recipient_email:
     mailto_link = f"mailto:{recipient_email}?subject={subject}&body={email_body.replace(chr(10), '%0A')}"
     st.markdown(f"[📧 Send Email in Outlook]({mailto_link})", unsafe_allow_html=True)
 else:
-    st.warning("No email address found for this Issuer.")
+    st.warning("No email address found for this Issuer in addresses.csv.")
 
 # --- Optional: preview raw data ---
 with st.expander("Preview fund/job data"):
