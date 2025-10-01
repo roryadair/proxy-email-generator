@@ -4,6 +4,7 @@ from io import BytesIO
 from docx import Document
 from docx.shared import Pt
 from email.message import EmailMessage
+from difflib import get_close_matches
 
 st.title("Proxy Email Generator")
 
@@ -122,18 +123,30 @@ st.download_button(
     mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
 )
 
-# --- Outlook integration ---
+# --- Outlook integration with fuzzy matching ---
 recipient_row = addresses[addresses["Institution"] == issuer]
-recipient_email = recipient_row["Email"].iloc[0] if not recipient_row.empty else ""
+
+recipient_email = ""
+if not recipient_row.empty:
+    recipient_email = recipient_row["Email"].iloc[0]
+else:
+    # Try fuzzy match
+    close_matches = get_close_matches(issuer, addresses["Institution"], n=1, cutoff=0.8)
+    if close_matches:
+        match = close_matches[0]
+        st.info(f"No exact match found. Using closest Institution: {match}")
+        recipient_email = addresses.loc[
+            addresses["Institution"] == match, "Email"
+        ].iloc[0]
 
 if recipient_email:
     subject = f"Proxy Vote Request - {issuer}"
 
-    # --- Option 1: Mailto link (opens Outlook immediately) ---
+    # --- Option 1: Mailto link ---
     mailto_link = f"mailto:{recipient_email}?subject={subject}&body={email_body.replace(chr(10), '%0A')}"
     st.markdown(f"[📧 Send Email in Outlook]({mailto_link})", unsafe_allow_html=True)
 
-    # --- Option 2: Download .eml file (Outlook draft) ---
+    # --- Option 2: .eml file download ---
     def build_eml(recipient, subject, body):
         msg = EmailMessage()
         msg["To"] = recipient
@@ -149,13 +162,6 @@ if recipient_email:
         file_name=f"{issuer}_proxy_request.eml",
         mime="message/rfc822"
     )
-
 else:
     st.warning(f"No email address found for this Issuer in addresses.csv: {issuer}")
-
-# --- Optional: preview raw data ---
-with st.expander("Preview fund/job data"):
-    st.dataframe(df)
-
-with st.expander("Preview Issuer addresses"):
-    st.dataframe(addresses)
+    st.write("Available Institutions in addresses.csv:", addresses["Institution"].unique())
