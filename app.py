@@ -1,5 +1,8 @@
 import streamlit as st
 import pandas as pd
+from io import BytesIO
+from docx import Document
+from docx.shared import Pt
 
 st.title("Proxy Email Generator")
 
@@ -44,7 +47,7 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# --- Build the email ---
+# --- Build the email body ---
 email_body = f"""
 Good afternoon,
 
@@ -72,9 +75,40 @@ Expected Date or Timeframe for Voting PE and SP Shares: {expected_date}
 Following ISS, Glass Lewis or Egan Jones recommendations: {recommendation}
 """
 
-st.text_area("Generated Email", email_body, height=400)
-st.download_button("Download Email", email_body, file_name="template_email.txt")
+# --- Styled Preview ---
+st.markdown(
+    f"""
+    <div style="background-color:#f9f9f9;padding:15px;border-radius:10px;border:1px solid #ddd;">
+    <pre style="font-family:Arial;font-size:14px;white-space:pre-wrap;">{email_body}</pre>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
 
-# --- Optional: show table for debugging ---
+# --- Copy to Clipboard ---
+st.code(email_body, language="text")
+
+# --- Build Word doc ---
+def build_doc(email_text):
+    doc = Document()
+    for line in email_text.strip().split("\n"):
+        p = doc.add_paragraph(line)
+        p.style.font.size = Pt(11)
+    bio = BytesIO()
+    doc.save(bio)
+    bio.seek(0)
+    return bio
+
+doc_file = build_doc(email_body)
+
+# --- Download as Word button ---
+st.download_button(
+    label="📄 Download as Word",
+    data=doc_file,
+    file_name="proxy_email.docx",
+    mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+)
+
+# --- Optional: preview raw data ---
 with st.expander("Preview data"):
     st.dataframe(df)
