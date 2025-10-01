@@ -6,8 +6,8 @@ import sqlalchemy
 db_conf = st.secrets["db2"]
 
 conn_str = (
-    f"db2+ibm_db://{db_conf['user']}:{db_conf['password']}"
-    f"@{db_conf['host']}:{db_conf['port']}/{db_conf['database']}"
+    f"ibm_db_sa://{db_conf['user']}:{db_conf['password']}@"
+    f"{db_conf['host']}:{db_conf['port']}/"
 )
 engine = sqlalchemy.create_engine(conn_str)
 
