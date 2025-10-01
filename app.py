@@ -18,11 +18,15 @@ def load_data():
 @st.cache_data
 def load_addresses():
     addresses = pd.read_csv("addresses.csv")
-    addresses = addresses.rename(columns=lambda x: x.strip())
+    addresses = addresses.rename(columns=lambda x: x.strip().rstrip(":"))
     return addresses
 
 df = load_data()
 addresses = load_addresses()
+
+# --- Normalize text for matching ---
+df["Issuer"] = df["Issuer"].str.strip().str.upper()
+addresses["Institution"] = addresses["Institution"].str.strip().str.upper()
 
 # --- Dropdown for Issuer ---
 issuer = st.selectbox("Select Issuer", sorted(df["Issuer"].unique()))
@@ -126,7 +130,7 @@ if recipient_email:
     mailto_link = f"mailto:{recipient_email}?subject={subject}&body={email_body.replace(chr(10), '%0A')}"
     st.markdown(f"[📧 Send Email in Outlook]({mailto_link})", unsafe_allow_html=True)
 else:
-    st.warning("No email address found for this Issuer in addresses.csv.")
+    st.warning(f"No email address found for this Issuer in addresses.csv: {issuer}")
 
 # --- Optional: preview raw data ---
 with st.expander("Preview fund/job data"):
