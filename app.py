@@ -6,7 +6,7 @@ from docx.shared import Pt
 
 st.title("Proxy Email Generator")
 
-# --- Load data from CSV ---
+# --- Load fund/job data from CSV ---
 @st.cache_data
 def load_data():
     df = pd.read_csv("data.csv")
@@ -14,7 +14,18 @@ def load_data():
     df = df.rename(columns=lambda x: x.strip().rstrip(":"))
     return df
 
+# --- Load addresses from Excel workbook ---
+@st.cache_data
+def load_addresses():
+    addresses = pd.read_excel(
+        "Bank Broker BackOffice Outreach QQQ 09 30 25.xlsx",
+        sheet_name="Addresses of Bandb"
+    )
+    addresses = addresses.rename(columns=lambda x: x.strip())
+    return addresses
+
 df = load_data()
+addresses = load_addresses()
 
 # --- Dropdown for Issuer ---
 issuer = st.selectbox("Select Issuer", sorted(df["Issuer"].unique()))
@@ -41,7 +52,7 @@ recommendation = st.selectbox(
     ["", "ISS", "Glass Lewis", "Egan Jones", "Other"]
 )
 
-# Instruction note in yellow-ish color
+# Instruction note
 st.markdown(
     "<span style='color:#b58900'><b>Please fill in Number of Shares Voting for Each Yellow Bucket and Timing</b></span>",
     unsafe_allow_html=True
@@ -109,6 +120,20 @@ st.download_button(
     mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
 )
 
+# --- Outlook integration ---
+recipient_row = addresses[addresses["Issuer"] == issuer]
+recipient_email = recipient_row["Email"].iloc[0] if not recipient_row.empty else ""
+
+if recipient_email:
+    subject = "Proxy Vote Request"
+    mailto_link = f"mailto:{recipient_email}?subject={subject}&body={email_body.replace(chr(10), '%0A')}"
+    st.markdown(f"[📧 Send Email in Outlook]({mailto_link})", unsafe_allow_html=True)
+else:
+    st.warning("No email address found for this Issuer.")
+
 # --- Optional: preview raw data ---
-with st.expander("Preview data"):
+with st.expander("Preview fund/job data"):
     st.dataframe(df)
+
+with st.expander("Preview Issuer addresses"):
+    st.dataframe(addresses)
