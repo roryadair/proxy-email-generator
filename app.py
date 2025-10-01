@@ -22,10 +22,27 @@ def fmt_date(val):
     try:
         return pd.to_datetime(val).strftime("%B %d, %Y")
     except Exception:
-        return val  # fallback if it's not a date
+        return val
 
 record_date = fmt_date(record["Record Date"])
 meeting_date = fmt_date(record["Meeting Date"])
+
+# --- Editable Form ---
+st.subheader("Additional Voting Details")
+
+proxy_edge_shares = st.text_input("Number of Proxy Edge Shares Voting:", "")
+special_proc_shares = st.text_input("Number of Special Processing Shares Voting:", "")
+expected_date = st.text_input("Expected Date or Timeframe for Voting PE and SP Shares:", "")
+recommendation = st.selectbox(
+    "Following ISS, Glass Lewis or Egan Jones recommendations:",
+    ["", "ISS", "Glass Lewis", "Egan Jones", "Other"]
+)
+
+# Instruction note in yellow-ish color
+st.markdown(
+    "<span style='color:#b58900'><b>Please fill in Number of Shares Voting for Each Yellow Bucket and Timing</b></span>",
+    unsafe_allow_html=True
+)
 
 # --- Build the email ---
 email_body = f"""
@@ -47,9 +64,15 @@ Broadridge Client Number: {record['Broadridge Client Number']}
 Total Shares Held: {record['Total Shares Held via Broadridge Reports']}
 Proxy Edge Accounts: {record['Number of Proxy Edge Accounts']}
 Special Processing Accounts: {record['Number of Special Processing Accounts']}
+
+--- Additional Voting Details ---
+Number of Proxy Edge Shares Voting: {proxy_edge_shares}
+Number of Special Processing Shares Voting: {special_proc_shares}
+Expected Date or Timeframe for Voting PE and SP Shares: {expected_date}
+Following ISS, Glass Lewis or Egan Jones recommendations: {recommendation}
 """
 
-st.text_area("Generated Email", email_body, height=300)
+st.text_area("Generated Email", email_body, height=400)
 st.download_button("Download Email", email_body, file_name="template_email.txt")
 
 # --- Optional: show table for debugging ---
