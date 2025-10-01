@@ -1,5 +1,3 @@
 streamlit
 pandas
-sqlalchemy
-ibm-db
-ibm-db-sa
+python-docx
