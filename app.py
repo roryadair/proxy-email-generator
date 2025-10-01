@@ -1,54 +1,22 @@
 import streamlit as st
 import pandas as pd
-import sqlalchemy
+import os
 
-# --- Connect to DB2 ---
-db_conf = st.secrets["db2"]
+st.title("Proxy Email Generator")
 
-conn_str = (
-    f"ibm_db_sa://{db_conf['user']}:{db_conf['password']}@"
-    f"{db_conf['host']}:{db_conf['port']}/"
-)
-engine = sqlalchemy.create_engine(conn_str)
-
-# --- Your SQL query ---
-QUERY = """
-SELECT
-    CLIENTNAME AS "Fund Name",
-    CAST(
-        SUBSTR(DIGITS(RECDATE),1,4) || '-' ||
-        SUBSTR(DIGITS(RECDATE),5,2) || '-' ||
-        SUBSTR(DIGITS(RECDATE),7,2)
-    AS DATE) AS "Record Date",
-    CAST(
-        SUBSTR(DIGITS(MEETDATE),1,4) || '-' ||
-        SUBSTR(DIGITS(MEETDATE),5,2) || '-' ||
-        SUBSTR(DIGITS(MEETDATE),7,2)
-    AS DATE) AS "Meeting Date",
-    CUSIP,
-    RTRIM(ICSJOB) || ', ' || RTRIM(MCNUMBER) AS "Broadridge Job Number",
-    BROKERNAME AS "Issuer",
-    BROKERID AS "Broadridge Client Number",
-    SHARES AS "Total Shares Held via Broadridge Reports",
-    PROXYEDGE AS "Number of Proxy Edge Accounts",
-    SPECIALPRO AS "Number of Special Processing Accounts"
-FROM ICS.IPMSCRAPEN
-"""
-
+# --- Load data from CSV ---
 @st.cache_data
 def load_data():
-    return pd.read_sql(QUERY, engine)
-
-# --- App UI ---
-st.title("Proxy Email Generator")
+    # Assumes you uploaded/exported your query as data.csv in the repo
+    return pd.read_csv("data.csv")
 
 df = load_data()
 
-# Dropdown for Issuer
+# --- Dropdown for Issuer ---
 issuer = st.selectbox("Select Issuer", sorted(df["Issuer"].unique()))
 record = df[df["Issuer"] == issuer].iloc[0]
 
-# Email template
+# --- Build the email ---
 email_body = f"""
 Good afternoon,
 
@@ -72,3 +40,7 @@ Special Processing Accounts: {record['Number of Special Processing Accounts']}
 
 st.text_area("Generated Email", email_body, height=300)
 st.download_button("Download Email", email_body, file_name="template_email.txt")
+
+# --- Optional: show table for debugging ---
+with st.expander("Preview data"):
+    st.dataframe(df)
