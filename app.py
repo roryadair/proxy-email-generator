@@ -3,6 +3,7 @@ import pandas as pd
 from io import BytesIO
 from docx import Document
 from docx.shared import Pt
+from email.message import EmailMessage
 
 st.title("Proxy Email Generator")
 
@@ -127,8 +128,28 @@ recipient_email = recipient_row["Email"].iloc[0] if not recipient_row.empty else
 
 if recipient_email:
     subject = f"Proxy Vote Request - {issuer}"
+
+    # --- Option 1: Mailto link (opens Outlook immediately) ---
     mailto_link = f"mailto:{recipient_email}?subject={subject}&body={email_body.replace(chr(10), '%0A')}"
     st.markdown(f"[📧 Send Email in Outlook]({mailto_link})", unsafe_allow_html=True)
+
+    # --- Option 2: Download .eml file (Outlook draft) ---
+    def build_eml(recipient, subject, body):
+        msg = EmailMessage()
+        msg["To"] = recipient
+        msg["Subject"] = subject
+        msg.set_content(body)
+        return msg.as_bytes()
+
+    eml_file = build_eml(recipient_email, subject, email_body)
+
+    st.download_button(
+        label="📩 Download Outlook Email (.eml)",
+        data=eml_file,
+        file_name=f"{issuer}_proxy_request.eml",
+        mime="message/rfc822"
+    )
+
 else:
     st.warning(f"No email address found for this Issuer in addresses.csv: {issuer}")
 
